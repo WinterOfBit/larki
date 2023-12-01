@@ -9,7 +9,8 @@ import (
 
 const botInfoUrl = "https://open.feishu.cn/open-apis/bot/v3/info"
 
-func (c *Client) getBotInfo() (*BotInfo, error) {
+// GetBotInfo 获取 BotInfo
+func (c *Client) GetBotInfo() (*BotInfo, error) {
 	resp, err := c.Get(context.Background(), botInfoUrl, nil, larkcore.AccessTokenTypeTenant)
 	if err != nil {
 		return nil, err
@@ -28,6 +29,7 @@ func (c *Client) getBotInfo() (*BotInfo, error) {
 	return &data.Bot, nil
 }
 
+// TrimTextContent 去除消息中的 @ 信息
 func (m *MessageEvent) TrimTextContent() (string, bool) {
 	content, ok := ParseTextContent(*m.Message.Content)
 	if !ok {

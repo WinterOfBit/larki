@@ -28,7 +28,7 @@ func NewClientWithConfig(config *Config) (*Client, error) {
 
 	client.Client = lark.NewClient(config.AppID, config.AppSecret)
 
-	bot, err := client.getBotInfo()
+	bot, err := client.GetBotInfo()
 	if err != nil {
 		return nil, err
 	}

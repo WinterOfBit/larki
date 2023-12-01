@@ -10,10 +10,12 @@ import (
 
 const larkErrFormat = "lark %s failed, code: %d, msg: %s"
 
+// newLarkError 构造 飞书服务端报错
 func newLarkError(code int, msg, field string) error {
 	return fmt.Errorf(larkErrFormat, field, code, msg)
 }
 
+// ParseTextContent 解析文本消息内容
 func ParseTextContent(text string) (string, bool) {
 	var content textContent
 	if err := sonic.UnmarshalString(text, &content); err != nil {
@@ -22,6 +24,7 @@ func ParseTextContent(text string) (string, bool) {
 	return content.Text, true
 }
 
+// ParseImageKey 解析图片消息imageKey
 func ParseImageKey(context string) (string, bool) {
 	var content imageContent
 	if err := sonic.UnmarshalString(context, &content); err != nil {
@@ -30,12 +33,13 @@ func ParseImageKey(context string) (string, bool) {
 	return content.ImageKey, true
 }
 
+// NewImageContent 构造图片消息内容
 func NewImageContent(imageKey string) string {
 	content, _ := sonic.Marshal(imageContent{ImageKey: imageKey})
 	return string(content)
 }
 
-// FilterTextContent filters out mentions and returns the text content and should ignore it
+// FilterTextContent 返回过滤掉 @ 信息后的文本内容和是否需要忽略，若包含@全体成员，则忽略，否则返回去除@信息后的文本内容
 func FilterTextContent(text string, mentions []*larkim.MentionEvent) (string, bool) {
 	text = strings.TrimSpace(text)
 	if len(mentions) == 0 {
@@ -55,6 +59,7 @@ func FilterTextContent(text string, mentions []*larkim.MentionEvent) (string, bo
 	return strings.TrimSpace(text), false
 }
 
+// buildTemplateCard 构造模板卡片消息
 func buildTemplateCard(templateId string, vars map[string]interface{}) (string, error) {
 	template := templateCardContentData{
 		TemplateId:        templateId,
@@ -74,6 +79,7 @@ func buildTemplateCard(templateId string, vars map[string]interface{}) (string, 
 	return str, nil
 }
 
+// buildPost 构造富文本消息
 func buildPost(title string, content []string) (string, error) {
 	post := larkim.NewMessagePostContent()
 	post.ContentTitle(title)
