@@ -1,4 +1,4 @@
-module scutbot.cn/larki
+module github.com/wintbiit/larki
 
 go 1.20
 
