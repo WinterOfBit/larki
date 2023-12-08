@@ -64,3 +64,19 @@ func (c *Client) GetRecords(ctx context.Context, baseId, tableId string, limit i
 
 	return records, nil
 }
+
+func (c *Client) GetRecord(ctx context.Context, baseId, tableId, recordId string) (*larkbitable.AppTableRecord, error) {
+	req := larkbitable.NewGetAppTableRecordReqBuilder().
+		AppToken(baseId).TableId(tableId).RecordId(recordId).Build()
+
+	resp, err := c.Bitable.AppTableRecord.Get(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Success() {
+		return nil, fmt.Errorf("failed to get record %s/%s/%s: [%d] %s", baseId, tableId, recordId, resp.Code, resp.Msg)
+	}
+
+	return resp.Data.Record, nil
+}
