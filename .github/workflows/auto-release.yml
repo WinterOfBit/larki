@@ -19,7 +19,7 @@ jobs:
         id: get_tag
         run: |
           latest_tag=$(git describe --tags --abbrev=0)
-          echo "::set-output name=tag::$latest_tag"
+          echo "{tag}={$latest_tag} >> $GITHUB_OUTPUT"
 
       - name: Increment version
         id: increment_version
@@ -34,24 +34,13 @@ jobs:
           new_patch=$((patch + 1))
           new_tag="$major.$minor.$new_patch"
 
-          echo "::set-output name=new_tag::$new_tag"
-
-      - name: Create new tag
-        id: create_tag
-        if: steps.increment_version.outputs.new_tag != ''
-        run: |
-          new_tag=${{ steps.increment_version.outputs.new_tag }}
-          git tag $new_tag
-          git push origin $new_tag
+          echo "{new_tag}={$new_tag} >> $GITHUB_OUTPUT"
 
       - name: Create Release
-        id: create_release
+        uses: "marvinpinto/action-automatic-releases@latest"
         if: steps.increment_version.outputs.new_tag != ''
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.increment_version.outputs.new_tag }}
-          release_name: Release ${{ steps.increment_version.outputs.new_tag }}
-          body: |
-            Release ${{ steps.increment_version.outputs.new_tag }}
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ steps.increment_version.outputs.new_tag }}
+          prerelease: false
+          title: "Release ${{ steps.increment_version.outputs.new_tag }}"
