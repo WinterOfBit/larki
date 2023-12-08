@@ -25,7 +25,7 @@ func (c *Client) GetImage(ctx context.Context, messageId, imageKey string) (io.R
 
 // GetImage 下载图片
 func GetImage(ctx context.Context, messageId, imageKey string) (io.Reader, error) {
-	return globalClient.GetImage(ctx, messageId, imageKey)
+	return GlobalClient.GetImage(ctx, messageId, imageKey)
 }
 
 // UploadImage 上传图片
@@ -45,5 +45,5 @@ func (c *Client) UploadImage(ctx context.Context, reader io.Reader) (string, err
 
 // UploadImage 上传图片
 func UploadImage(ctx context.Context, reader io.Reader) (string, error) {
-	return globalClient.UploadImage(ctx, reader)
+	return GlobalClient.UploadImage(ctx, reader)
 }

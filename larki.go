@@ -2,13 +2,14 @@ package larki
 
 import (
 	"context"
+	"sync"
 
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 )
 
-var globalClient *Client
+var GlobalClient *Client
 
 func NewClient(appId, appSecret, verifyToken, encryptKey string) (*Client, error) {
 	return NewClientWithConfig(&Config{
@@ -21,6 +22,8 @@ func NewClient(appId, appSecret, verifyToken, encryptKey string) (*Client, error
 
 func NewClientWithConfig(config *Config) (*Client, error) {
 	messageEventChan := make(chan *MessageEvent, 8)
+	botAddedEventChan := make(chan *BotAddedEvent, 8)
+	chatCreatedEventChan := make(chan *ChatCreatedEvent, 8)
 	client := &Client{
 		Config:       config,
 		MessageEvent: messageEventChan,
@@ -38,11 +41,23 @@ func NewClientWithConfig(config *Config) (*Client, error) {
 		OnP2MessageReceiveV1(func(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
 			messageEventChan <- &MessageEvent{event.Event}
 			return nil
+		}).
+		OnP2ChatMemberBotAddedV1(func(ctx context.Context, event *larkim.P2ChatMemberBotAddedV1) error {
+			botAddedEventChan <- &BotAddedEvent{event.Event}
+			return nil
+		}).
+		OnP1P2PChatCreatedV1(func(ctx context.Context, event *larkim.P1P2PChatCreatedV1) error {
+			chatCreatedEventChan <- &ChatCreatedEvent{event.Event}
+			return nil
 		})
 
 	return client, nil
 }
 
+var clientMu sync.Mutex
+
 func SetGlobalClient(client *Client) {
-	globalClient = client
+	clientMu.Lock()
+	defer clientMu.Unlock()
+	GlobalClient = client
 }
