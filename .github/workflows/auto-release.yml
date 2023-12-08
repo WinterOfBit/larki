@@ -22,28 +22,16 @@ jobs:
           echo "tag=${latest_tag}" >> "$GITHUB_OUTPUT"
           echo "## Old Tag: $latest_tag" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Increment version
-        if : steps.get_tag.outputs.tag != ''
-        id: increment_version
-        run: |
-          current_tag=${{ steps.get_tag.outputs.tag }}
-          # Parse the current version number
-          major=$(echo $current_tag | cut -d. -f1)
-          minor=$(echo $current_tag | cut -d. -f2)
-          patch=$(echo $current_tag | cut -d. -f3)
-
-          # Increment the version based on your rules (e.g., incrementing patch version)
-          new_patch=$((patch + 1))
-          new_tag="$major.$minor.$new_patch"
-
-          echo "new_tag=$new_tag" >> "$GITHUB_OUTPUT"
-          echo "## New Tag: $new_tag" >> "$GITHUB_STEP_SUMMARY"
-
       - name: Create Release
+        id: create_release
         uses: "marvinpinto/action-automatic-releases@latest"
         if: steps.increment_version.outputs.new_tag != ''
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ steps.increment_version.outputs.new_tag }}
+          automatic_release_tag: ${{ steps.get_tag.outputs.tag }}
           prerelease: false
           title: "Release ${{ steps.increment_version.outputs.new_tag }}"
+
+      - name: Summary
+        run: |
+          echo "## New Tag: ${{ steps.create_release.outputs.automatic_releases_tag }}" >> "$GITHUB_STEP_SUMMARY"
