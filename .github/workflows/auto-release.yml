@@ -19,7 +19,8 @@ jobs:
         id: get_tag
         run: |
           latest_tag=$(git describe --tags --abbrev=0)
-          echo "{tag}={$latest_tag}" >> $GITHUB_OUTPUT
+          echo "{tag}={${latest_tag}}" >> "$GITHUB_OUTPUT"
+          echo "## Old Tag: $latest_tag" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Increment version
         id: increment_version
@@ -34,7 +35,8 @@ jobs:
           new_patch=$((patch + 1))
           new_tag="$major.$minor.$new_patch"
 
-          echo "{new_tag}={$new_tag}" >> $GITHUB_OUTPUT
+          echo "{new_tag}={$new_tag}" >> "$GITHUB_OUTPUT"
+          echo "## New Tag: $new_tag" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create Release
         uses: "marvinpinto/action-automatic-releases@latest"
