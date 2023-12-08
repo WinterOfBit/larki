@@ -1,0 +1,55 @@
+name: Auto Increment Version and Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "::set-output name=tag::$latest_tag"
+
+      - name: Increment version
+        id: increment_version
+        run: |
+          current_tag=${{ steps.get_tag.outputs.tag }}
+          # Parse the current version number
+          major=$(echo $current_tag | cut -d. -f1)
+          minor=$(echo $current_tag | cut -d. -f2)
+          patch=$(echo $current_tag | cut -d. -f3)
+
+          # Increment the version based on your rules (e.g., incrementing patch version)
+          new_patch=$((patch + 1))
+          new_tag="$major.$minor.$new_patch"
+
+          echo "::set-output name=new_tag::$new_tag"
+
+      - name: Create new tag
+        id: create_tag
+        if: steps.increment_version.outputs.new_tag != ''
+        run: |
+          new_tag=${{ steps.increment_version.outputs.new_tag }}
+          git tag $new_tag
+          git push origin $new_tag
+
+      - name: Create Release
+        id: create_release
+        if: steps.increment_version.outputs.new_tag != ''
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.increment_version.outputs.new_tag }}
+          release_name: Release ${{ steps.increment_version.outputs.new_tag }}
+          body: |
+            Release ${{ steps.increment_version.outputs.new_tag }}
