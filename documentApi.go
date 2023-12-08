@@ -3,6 +3,8 @@ package larki
 import (
 	"context"
 	"fmt"
+	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
+	"io"
 
 	larkbitable "github.com/larksuite/oapi-sdk-go/v3/service/bitable/v1"
 )
@@ -75,8 +77,21 @@ func (c *Client) GetRecord(ctx context.Context, baseId, tableId, recordId string
 	}
 
 	if !resp.Success() {
-		return nil, fmt.Errorf("failed to get record %s/%s/%s: [%d] %s", baseId, tableId, recordId, resp.Code, resp.Msg)
+		return nil, newLarkError(resp.Code, resp.Msg, "GetRecord")
 	}
 
 	return resp.Data.Record, nil
+}
+
+func (c *Client) GetDocResource(ctx context.Context, fileToken string) (io.Reader, string, error) {
+	resp, err := c.Drive.File.Download(ctx, larkdrive.NewDownloadFileReqBuilder().FileToken(fileToken).Build())
+	if err != nil {
+		return nil, "", err
+	}
+
+	if !resp.Success() {
+		return nil, "", newLarkError(resp.Code, resp.Msg, "GetDocResource")
+	}
+
+	return resp.File, resp.FileName, nil
 }
