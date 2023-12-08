@@ -3,8 +3,9 @@ package larki
 import (
 	"context"
 	"fmt"
-	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
 	"io"
+
+	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
 
 	larkbitable "github.com/larksuite/oapi-sdk-go/v3/service/bitable/v1"
 )
@@ -26,7 +27,7 @@ func (c *Client) UpdateBaseRecord(ctx context.Context, baseId, tableId, recordId
 	return nil
 }
 
-func (c *Client) GetRecords(ctx context.Context, baseId, tableId string, limit int) ([]*larkbitable.AppTableRecord, error) {
+func (c *Client) GetRecords(ctx context.Context, baseId, tableId, viewId string, limit int) ([]*larkbitable.AppTableRecord, error) {
 	var records []*larkbitable.AppTableRecord
 	var pageToken string
 	pageSize := 50
@@ -39,7 +40,7 @@ func (c *Client) GetRecords(ctx context.Context, baseId, tableId string, limit i
 
 	for {
 		req := larkbitable.NewListAppTableRecordReqBuilder().
-			AppToken(baseId).TableId(tableId).PageSize(pageSize).PageToken(pageToken).Build()
+			AppToken(baseId).TableId(tableId).ViewId(viewId).PageSize(pageSize).PageToken(pageToken).Build()
 
 		resp, err := c.Bitable.AppTableRecord.List(ctx, req)
 		if err != nil {
@@ -83,7 +84,20 @@ func (c *Client) GetRecord(ctx context.Context, baseId, tableId, recordId string
 	return resp.Data.Record, nil
 }
 
-func (c *Client) GetDocResource(ctx context.Context, fileToken string) (io.Reader, string, error) {
+func (c *Client) GetDocMedia(ctx context.Context, fileToken string) (io.Reader, string, error) {
+	resp, err := c.Drive.Media.Download(ctx, larkdrive.NewDownloadMediaReqBuilder().FileToken(fileToken).Build())
+	if err != nil {
+		return nil, "", err
+	}
+
+	if !resp.Success() {
+		return nil, "", newLarkError(resp.Code, resp.Msg, "GetDocResource")
+	}
+
+	return resp.File, resp.FileName, nil
+}
+
+func (c *Client) GetDocFile(ctx context.Context, fileToken string) (io.Reader, string, error) {
 	resp, err := c.Drive.File.Download(ctx, larkdrive.NewDownloadFileReqBuilder().FileToken(fileToken).Build())
 	if err != nil {
 		return nil, "", err
