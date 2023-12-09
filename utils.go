@@ -40,23 +40,28 @@ func NewImageContent(imageKey string) string {
 }
 
 // FilterTextContent 返回过滤掉 @ 信息后的文本内容和是否需要忽略，若包含@全体成员，则忽略，否则返回去除@信息后的文本内容
-func FilterTextContent(text string, mentions []*larkim.MentionEvent) (string, bool) {
+// @return text, atbot, atall
+func (c *Client) FilterTextContent(text string, mentions []*larkim.MentionEvent) (string, bool, bool) {
 	text = strings.TrimSpace(text)
 	if len(mentions) == 0 {
-		return text, true
+		return text, false, false
 	}
 
 	if strings.Contains(text, "@_all") {
-		return text, true
+		return text, false, true
 	}
 
+	atBot := false
 	for _, mention := range mentions {
 		if mention.Key != nil {
 			text = strings.ReplaceAll(text, *mention.Key, "")
+			if *mention.Id.OpenId == c.BotInfo.OpenID {
+				atBot = true
+			}
 		}
 	}
 
-	return strings.TrimSpace(text), false
+	return strings.TrimSpace(text), atBot, false
 }
 
 // buildTemplateCard 构造模板卡片消息
