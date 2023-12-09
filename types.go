@@ -4,6 +4,9 @@ import (
 	"context"
 	"io"
 
+	larkevent "github.com/larksuite/oapi-sdk-go/v3/event"
+	larkapplication "github.com/larksuite/oapi-sdk-go/v3/service/application/v6"
+
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
@@ -13,13 +16,12 @@ type Client struct {
 	*lark.Client
 	*Config
 	*BotInfo
-	EventDispatcher  *dispatcher.EventDispatcher
-	MessageEvent     <-chan *MessageEvent
-	BotAddedEvent    <-chan *BotAddedEvent
-	ChatCreatedEvent <-chan *ChatCreatedEvent
+	EventDispatcher *dispatcher.EventDispatcher
 	MessageClient
 	ImageClient
 }
+
+type ClientOption func(*Client)
 
 type Config struct {
 	AppID       string
@@ -74,6 +76,14 @@ type ChatCreatedEvent struct {
 	*larkim.P1P2PChatCreatedV1Data
 }
 
+type MenuEvent struct {
+	*larkapplication.P2BotMenuV6Data
+}
+
+type CustomizedEvent struct {
+	*larkevent.EventReq
+}
+
 type botInfoResp struct {
 	Code int     `json:"code"`
 	Msg  string  `json:"msg"`
@@ -96,4 +106,15 @@ type templateCardContent struct {
 type templateCardContentData struct {
 	TemplateId        string                 `json:"template_id"`
 	TemplateVariables map[string]interface{} `json:"template_variables"`
+}
+
+type MenuEventBody struct {
+	Operator  Operator `json:"operator"`
+	EventKey  string   `json:"event_key"`
+	Timestamp int64    `json:"timestamp"`
+}
+
+type Operator struct {
+	OperatorName string        `json:"operator_name"`
+	OperatorId   larkim.UserId `json:"operator_id"`
 }

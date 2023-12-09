@@ -28,14 +28,3 @@ func (c *Client) GetBotInfo() (*BotInfo, error) {
 
 	return &data.Bot, nil
 }
-
-// TrimTextContent 去除消息中的 @ 信息
-func (m *MessageEvent) TrimTextContent() (string, bool) {
-	content, ok := ParseTextContent(*m.Message.Content)
-	if !ok {
-		return "", false
-	}
-
-	filtered, ignore := FilterTextContent(content, m.Message.Mentions)
-	return filtered, ignore
-}
