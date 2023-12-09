@@ -13,8 +13,10 @@ type Client struct {
 	*lark.Client
 	*Config
 	*BotInfo
-	EventDispatcher *dispatcher.EventDispatcher
-	MessageEvent    <-chan *MessageEvent
+	EventDispatcher  *dispatcher.EventDispatcher
+	MessageEvent     <-chan *MessageEvent
+	BotAddedEvent    <-chan *BotAddedEvent
+	ChatCreatedEvent <-chan *ChatCreatedEvent
 	MessageClient
 	ImageClient
 }

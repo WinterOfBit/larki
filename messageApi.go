@@ -100,7 +100,7 @@ func ReplyCardTemplate(ctx context.Context, messageId, templateId string, vars m
 	return GlobalClient.ReplyCardTemplate(ctx, messageId, templateId, vars)
 }
 
-func (c *Client) sendMessage(ctx context.Context, receiverIdType, message, receiveId, messageType string) (string, error) {
+func (c *Client) SendMessage(ctx context.Context, receiverIdType, message, receiveId, messageType string) (string, error) {
 	resp, err := c.Im.Message.Create(ctx,
 		larkim.NewCreateMessageReqBuilder().Body(
 			larkim.NewCreateMessageReqBodyBuilder().
@@ -122,12 +122,12 @@ func (c *Client) sendMessage(ctx context.Context, receiverIdType, message, recei
 
 // SendMessage 发送消息
 func SendMessage(ctx context.Context, receiverIdType, message, receiveId, messageType string) (string, error) {
-	return GlobalClient.sendMessage(ctx, receiverIdType, message, receiveId, messageType)
+	return GlobalClient.SendMessage(ctx, receiverIdType, message, receiveId, messageType)
 }
 
 // SendMessageToGroup 发送消息到群组
 func (c *Client) SendMessageToGroup(ctx context.Context, groupId, message, messageType string) (string, error) {
-	return c.sendMessage(ctx, larkim.ReceiveIdTypeChatId, message, groupId, messageType)
+	return c.SendMessage(ctx, larkim.ReceiveIdTypeChatId, message, groupId, messageType)
 }
 
 // SendMessageToGroup 发送消息到群组
@@ -152,7 +152,7 @@ func SendTextToGroup(ctx context.Context, groupId, title string, text ...string)
 
 // SendImageToGroup 使用图片发送消息到群组
 func (c *Client) SendImageToGroup(ctx context.Context, groupId, imageKey string) (string, error) {
-	return c.sendMessage(ctx, larkim.ReceiveIdTypeChatId, NewImageContent(imageKey), groupId, larkim.MsgTypeImage)
+	return c.SendMessage(ctx, larkim.ReceiveIdTypeChatId, NewImageContent(imageKey), groupId, larkim.MsgTypeImage)
 }
 
 // SendImageToGroup 使用图片发送消息到群组
@@ -162,7 +162,7 @@ func SendImageToGroup(ctx context.Context, groupId, imageKey string) (string, er
 
 // SendCardToGroup 使用卡片发送消息到群组
 func (c *Client) SendCardToGroup(ctx context.Context, groupId, card string) (string, error) {
-	return c.sendMessage(ctx, larkim.ReceiveIdTypeChatId, card, groupId, larkim.MsgTypeInteractive)
+	return c.SendMessage(ctx, larkim.ReceiveIdTypeChatId, card, groupId, larkim.MsgTypeInteractive)
 }
 
 // SendCardToGroup 使用卡片发送消息到群组
@@ -187,7 +187,7 @@ func SendCardTemplateToGroup(ctx context.Context, groupId, templateId string, va
 
 // SendMessageToUser 发送消息到用户
 func (c *Client) SendMessageToUser(ctx context.Context, openId, message, messageType string) (string, error) {
-	return c.sendMessage(ctx, larkim.ReceiveIdTypeOpenId, message, openId, messageType)
+	return c.SendMessage(ctx, larkim.ReceiveIdTypeOpenId, message, openId, messageType)
 }
 
 // SendMessageToUser 发送消息到用户
@@ -212,7 +212,7 @@ func SendTextToUser(ctx context.Context, openId, title string, text ...string) (
 
 // SendImageToUser 使用图片发送消息到用户
 func (c *Client) SendImageToUser(ctx context.Context, openId, imageKey string) (string, error) {
-	return c.sendMessage(ctx, larkim.ReceiveIdTypeOpenId, NewImageContent(imageKey), openId, larkim.MsgTypeImage)
+	return c.SendMessage(ctx, larkim.ReceiveIdTypeOpenId, NewImageContent(imageKey), openId, larkim.MsgTypeImage)
 }
 
 // SendImageToUser 使用图片发送消息到用户
@@ -222,7 +222,7 @@ func SendImageToUser(ctx context.Context, openId, imageKey string) (string, erro
 
 // SendCardToUser 使用卡片发送消息到用户
 func (c *Client) SendCardToUser(ctx context.Context, openId, card string) (string, error) {
-	return c.sendMessage(ctx, larkim.ReceiveIdTypeOpenId, card, openId, larkim.MsgTypeInteractive)
+	return c.SendMessage(ctx, larkim.ReceiveIdTypeOpenId, card, openId, larkim.MsgTypeInteractive)
 }
 
 // SendCardToUser 使用卡片发送消息到用户

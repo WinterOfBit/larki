@@ -25,8 +25,10 @@ func NewClientWithConfig(config *Config) (*Client, error) {
 	botAddedEventChan := make(chan *BotAddedEvent, 8)
 	chatCreatedEventChan := make(chan *ChatCreatedEvent, 8)
 	client := &Client{
-		Config:       config,
-		MessageEvent: messageEventChan,
+		Config:           config,
+		MessageEvent:     messageEventChan,
+		BotAddedEvent:    botAddedEventChan,
+		ChatCreatedEvent: chatCreatedEventChan,
 	}
 
 	client.Client = lark.NewClient(config.AppID, config.AppSecret)
