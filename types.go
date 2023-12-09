@@ -104,8 +104,8 @@ type templateCardContent struct {
 }
 
 type templateCardContentData struct {
-	TemplateId        string                 `json:"template_id"`
-	TemplateVariables map[string]interface{} `json:"template_variables"`
+	TemplateId string                 `json:"template_id"`
+	Vars       map[string]interface{} `json:"template_variable"`
 }
 
 type MenuEventBody struct {

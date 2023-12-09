@@ -67,8 +67,8 @@ func (c *Client) FilterTextContent(text string, mentions []*larkim.MentionEvent)
 // buildTemplateCard 构造模板卡片消息
 func buildTemplateCard(templateId string, vars map[string]interface{}) (string, error) {
 	template := templateCardContentData{
-		TemplateId:        templateId,
-		TemplateVariables: vars,
+		TemplateId: templateId,
+		Vars:       vars,
 	}
 
 	card := templateCardContent{
