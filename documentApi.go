@@ -109,3 +109,16 @@ func (c *Client) GetDocFile(ctx context.Context, fileToken string) (io.Reader, s
 
 	return resp.File, resp.FileName, nil
 }
+
+func (c *Client) ListBaseTables(ctx context.Context, baseId string) ([]*larkbitable.AppTable, error) {
+	resp, err := c.Bitable.AppTable.List(ctx, larkbitable.NewListAppTableReqBuilder().AppToken(baseId).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Success() {
+		return nil, newLarkError(resp.Code, resp.Msg, "ListBaseTables")
+	}
+
+	return resp.Data.Items, nil
+}
