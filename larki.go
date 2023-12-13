@@ -2,6 +2,7 @@ package larki
 
 import (
 	"context"
+	"os"
 	"sync"
 
 	larkevent "github.com/larksuite/oapi-sdk-go/v3/event"
@@ -14,6 +15,12 @@ import (
 
 var GlobalClient *Client
 
+func init() {
+	if client, err := NewClientFromEnv(); err == nil {
+		GlobalClient = client
+	}
+}
+
 func NewClient(appId, appSecret, verifyToken, encryptKey string, options ...ClientOption) (*Client, error) {
 	return NewClientWithConfig(&Config{
 		AppID:       appId,
@@ -21,6 +28,15 @@ func NewClient(appId, appSecret, verifyToken, encryptKey string, options ...Clie
 		VerifyToken: verifyToken,
 		EncryptKey:  encryptKey,
 	}, options...)
+}
+
+func NewClientFromEnv() (*Client, error) {
+	return NewClientWithConfig(&Config{
+		AppID:       os.Getenv("LARK_APP_ID"),
+		AppSecret:   os.Getenv("LARK_APP_SECRET"),
+		VerifyToken: os.Getenv("LARK_VERIFY_TOKEN"),
+		EncryptKey:  os.Getenv("LARK_ENCRYPT_KEY"),
+	})
 }
 
 func NewClientWithConfig(config *Config, options ...ClientOption) (*Client, error) {
