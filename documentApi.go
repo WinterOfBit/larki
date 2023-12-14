@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
+
+	larkwiki "github.com/larksuite/oapi-sdk-go/v3/service/wiki/v2"
 
 	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
 
@@ -121,4 +124,127 @@ func (c *Client) ListBaseTables(ctx context.Context, baseId string) ([]*larkbita
 	}
 
 	return resp.Data.Items, nil
+}
+
+func (c *Client) UploadDocMedia(ctx context.Context, name, parentType, parentNode, extras string, size int, reader io.Reader) (string, error) {
+	resp, err := c.Drive.Media.UploadAll(ctx, larkdrive.NewUploadAllMediaReqBuilder().Body(
+		larkdrive.NewUploadAllMediaReqBodyBuilder().
+			FileName(name).
+			ParentType(parentType).
+			ParentNode(parentNode).
+			File(reader).
+			Extra(extras).
+			Size(size).Build()).Build())
+	if err != nil {
+		return "", err
+	}
+
+	if !resp.Success() {
+		return "", newLarkError(resp.Code, resp.Msg, "UploadMedia")
+	}
+
+	return *resp.Data.FileToken, nil
+}
+
+func (c *Client) UploadDocFile(ctx context.Context, name, parentType, parentNode string, size int, reader io.Reader) (string, error) {
+	resp, err := c.Drive.File.UploadAll(ctx, larkdrive.NewUploadAllFileReqBuilder().Body(
+		larkdrive.NewUploadAllFileReqBodyBuilder().
+			FileName(name).
+			ParentType(parentType).
+			ParentNode(parentNode).
+			File(reader).
+			Size(size).Build()).Build())
+	if err != nil {
+		return "", err
+	}
+
+	if !resp.Success() {
+		return "", newLarkError(resp.Code, resp.Msg, "UploadFile")
+	}
+
+	return *resp.Data.FileToken, nil
+}
+
+func (c *Client) ImportDoc(ctx context.Context, fileExt, fileToken, targetType, fileName string, mountType int, mountKey string) (string, error) {
+	resp, err := c.Drive.ImportTask.Create(ctx, larkdrive.NewCreateImportTaskReqBuilder().
+		ImportTask(larkdrive.NewImportTaskBuilder().
+			FileExtension(fileExt).
+			FileToken(fileToken).
+			Type(targetType).
+			Point(
+				larkdrive.NewImportTaskMountPointBuilder().
+					MountType(mountType).MountKey(mountKey).Build()).
+			FileName(fileName).Build()).Build())
+	if err != nil {
+		return "", err
+	}
+
+	if !resp.Success() {
+		return "", newLarkError(resp.Code, resp.Msg, "ImportDoc")
+	}
+
+	return *resp.Data.Ticket, nil
+}
+
+func (c *Client) GetImportDocStatus(ctx context.Context, ticket string) (*larkdrive.ImportTask, error) {
+	resp, err := c.Drive.ImportTask.Get(ctx, larkdrive.NewGetImportTaskReqBuilder().Ticket(ticket).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Success() {
+		return nil, newLarkError(resp.Code, resp.Msg, "GetImportDocStatus")
+	}
+
+	return resp.Data.Result, nil
+}
+
+func (c *Client) MoveDocToWiki(ctx context.Context, spaceId, objType, objToken, parentWikiToken string) (*larkwiki.MoveDocsToWikiSpaceNodeRespData, error) {
+	resp, err := c.Wiki.SpaceNode.MoveDocsToWiki(ctx, larkwiki.NewMoveDocsToWikiSpaceNodeReqBuilder().
+		Body(larkwiki.NewMoveDocsToWikiSpaceNodeReqBodyBuilder().
+			ParentWikiToken(parentWikiToken).
+			ObjToken(objToken).
+			ObjType(objType).Build()).SpaceId(spaceId).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Success() {
+		return nil, newLarkError(resp.Code, resp.Msg, "MoveDocToWiki")
+	}
+
+	return resp.Data, nil
+}
+
+// UploadToWiki 上传文件到知识库
+func (c *Client) UploadToWiki(ctx context.Context,
+	name, ext, docType, spaceId, parentNode string,
+	size int, reader io.Reader,
+) (*larkwiki.MoveDocsToWikiSpaceNodeRespData, error) {
+	extras := fmt.Sprintf(`{"file_extension":"%s", "obj_type": "%s"}`, ext, docType)
+	fileToken, err := c.UploadDocMedia(ctx, name, "ccm_import_open", "", extras, size, reader)
+	if err != nil {
+		return nil, err
+	}
+
+	ticket, err := c.ImportDoc(ctx, ext, fileToken, docType, name, 1, "root")
+	if err != nil {
+		return nil, err
+	}
+
+	var status *larkdrive.ImportTask
+	for {
+		status, err = c.GetImportDocStatus(ctx, ticket)
+		if err != nil {
+			return nil, err
+		}
+
+		if *status.JobStatus == 0 {
+			break
+		}
+
+		time.Sleep(3 * time.Second)
+	}
+
+	return c.MoveDocToWiki(ctx, spaceId, docType, *status.Token, parentNode)
 }
