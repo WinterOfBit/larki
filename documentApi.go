@@ -257,9 +257,11 @@ func (c *Client) UploadToWiki(ctx context.Context,
 
 		if *status.JobStatus == 0 {
 			break
+		} else if *status.JobStatus < 3 {
+			time.Sleep(3 * time.Second)
+		} else {
+			return nil, newLarkError(*status.JobStatus, *status.JobErrorMsg, "UploadToWiki")
 		}
-
-		time.Sleep(3 * time.Second)
 	}
 
 	resp, err := c.MoveDocToWiki(ctx, spaceId, docType, *status.Token, parentNode)
@@ -274,8 +276,14 @@ func (c *Client) UploadToWiki(ctx context.Context,
 			return nil, err
 		}
 
-		if len(moveStatus) == 0 {
-			break
+		if len(moveStatus) > 0 {
+			if *moveStatus[0].Status == 0 {
+				break
+			} else if *moveStatus[0].Status == 1 {
+				time.Sleep(3 * time.Second)
+			} else {
+				return nil, newLarkError(*moveStatus[0].Status, *moveStatus[0].StatusMsg, "UploadToWiki")
+			}
 		}
 
 		time.Sleep(3 * time.Second)
