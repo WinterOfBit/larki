@@ -216,11 +216,27 @@ func (c *Client) MoveDocToWiki(ctx context.Context, spaceId, objType, objToken, 
 	return resp.Data, nil
 }
 
+func (c *Client) GetMoveDocToWikiStatus(ctx context.Context, taskId string) ([]*larkwiki.MoveResult, error) {
+	resp, err := c.Wiki.Task.Get(ctx, larkwiki.NewGetTaskReqBuilder().
+		TaskId(taskId).
+		TaskType(larkwiki.TaskTypeMove).
+		Build())
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Success() {
+		return nil, newLarkError(resp.Code, resp.Msg, "GetMoveDocToWikiStatus")
+	}
+
+	return resp.Data.Task.MoveResult, nil
+}
+
 // UploadToWiki 上传文件到知识库
 func (c *Client) UploadToWiki(ctx context.Context,
 	name, ext, docType, spaceId, parentNode string,
 	size int, reader io.Reader,
-) (*larkwiki.MoveDocsToWikiSpaceNodeRespData, error) {
+) ([]*larkwiki.MoveResult, error) {
 	extras := fmt.Sprintf(`{"file_extension":"%s", "obj_type": "%s"}`, ext, docType)
 	fileToken, err := c.UploadDocMedia(ctx, name, "ccm_import_open", "", extras, size, reader)
 	if err != nil {
@@ -246,5 +262,24 @@ func (c *Client) UploadToWiki(ctx context.Context,
 		time.Sleep(3 * time.Second)
 	}
 
-	return c.MoveDocToWiki(ctx, spaceId, docType, *status.Token, parentNode)
+	resp, err := c.MoveDocToWiki(ctx, spaceId, docType, *status.Token, parentNode)
+	if err != nil {
+		return nil, err
+	}
+
+	var moveStatus []*larkwiki.MoveResult
+	for {
+		moveStatus, err = c.GetMoveDocToWikiStatus(ctx, *resp.TaskId)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(moveStatus) == 0 {
+			break
+		}
+
+		time.Sleep(3 * time.Second)
+	}
+
+	return moveStatus, nil
 }
