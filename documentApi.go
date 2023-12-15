@@ -126,10 +126,10 @@ func (c *Client) ListBaseTables(ctx context.Context, baseId string) ([]*larkbita
 	return resp.Data.Items, nil
 }
 
-func (c *Client) UploadDocMedia(ctx context.Context, name, parentType, parentNode, extras string, size int, reader io.Reader) (string, error) {
+func (c *Client) UploadDocMedia(ctx context.Context, fileName, parentType, parentNode, extras string, size int, reader io.Reader) (string, error) {
 	resp, err := c.Drive.Media.UploadAll(ctx, larkdrive.NewUploadAllMediaReqBuilder().Body(
 		larkdrive.NewUploadAllMediaReqBodyBuilder().
-			FileName(name).
+			FileName(fileName).
 			ParentType(parentType).
 			ParentNode(parentNode).
 			File(reader).
@@ -238,7 +238,10 @@ func (c *Client) UploadToWiki(ctx context.Context,
 	size int, reader io.Reader,
 ) ([]*larkwiki.MoveResult, error) {
 	extras := fmt.Sprintf(`{"file_extension":"%s", "obj_type": "%s"}`, ext, docType)
-	fileToken, err := c.UploadDocMedia(ctx, name, "ccm_import_open", "", extras, size, reader)
+	fileToken, err := c.UploadDocMedia(ctx,
+		fmt.Sprintf("%s-%d.%s", name, time.Now().UnixMilli(), ext),
+		"ccm_import_open",
+		"", extras, size, reader)
 	if err != nil {
 		return nil, err
 	}
