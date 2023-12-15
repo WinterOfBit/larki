@@ -243,7 +243,7 @@ func (c *Client) UploadToWiki(ctx context.Context,
 		return nil, err
 	}
 
-	ticket, err := c.ImportDoc(ctx, ext, fileToken, docType, name, 1, "root")
+	ticket, err := c.ImportDoc(ctx, ext, fileToken, docType, name, 1, "")
 	if err != nil {
 		return nil, err
 	}
