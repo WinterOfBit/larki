@@ -244,3 +244,63 @@ func (c *Client) SendCardTemplateToUser(ctx context.Context, openId, templateId 
 func SendCardTemplateToUser(ctx context.Context, openId, templateId string, vars map[string]interface{}) (string, error) {
 	return GlobalClient.SendCardTemplateToUser(ctx, openId, templateId, vars)
 }
+
+func (c *Client) UpdateMessage(ctx context.Context, messageId, message, messageType string) error {
+	resp, err := c.Im.Message.Update(ctx,
+		larkim.NewUpdateMessageReqBuilder().Body(
+			larkim.NewUpdateMessageReqBodyBuilder().
+				MsgType(messageType).
+				Content(message).
+				Build()).
+			MessageId(messageId).Build())
+	if err != nil {
+		return err
+	}
+
+	if !resp.Success() {
+		return newLarkError(resp.Code, resp.Msg, "UpdateMessage")
+	}
+
+	return nil
+}
+
+func UpdateMessage(ctx context.Context, messageId, message, messageType string) error {
+	return GlobalClient.UpdateMessage(ctx, messageId, message, messageType)
+}
+
+func (c *Client) UpdateTextMessage(ctx context.Context, messageId, title string, text ...string) error {
+	content, err := buildPost(title, text)
+	if err != nil {
+		return err
+	}
+
+	return c.UpdateMessage(ctx, messageId, content, larkim.MsgTypePost)
+}
+
+func UpdateTextMessage(ctx context.Context, messageId, title string, text ...string) error {
+	return GlobalClient.UpdateTextMessage(ctx, messageId, title, text...)
+}
+
+func (c *Client) UpdateCardTemplate(ctx context.Context, messageId, templateId string, vars map[string]interface{}) error {
+	content, err := buildTemplateCard(templateId, vars)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Im.Message.Patch(ctx, larkim.NewPatchMessageReqBuilder().MessageId(messageId).
+		Body(larkim.NewPatchMessageReqBodyBuilder().
+			Content(content).Build()).Build())
+	if err != nil {
+		return err
+	}
+
+	if !resp.Success() {
+		return newLarkError(resp.Code, resp.Msg, "UpdateCardTemplate")
+	}
+
+	return nil
+}
+
+func UpdateCardTemplate(ctx context.Context, messageId, templateId string, vars map[string]interface{}) error {
+	return GlobalClient.UpdateCardTemplate(ctx, messageId, templateId, vars)
+}

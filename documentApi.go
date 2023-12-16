@@ -30,6 +30,10 @@ func (c *Client) UpdateBaseRecord(ctx context.Context, baseId, tableId, recordId
 	return nil
 }
 
+func UpdateBaseRecord(ctx context.Context, baseId, tableId, recordId string, fields map[string]interface{}) error {
+	return GlobalClient.UpdateBaseRecord(ctx, baseId, tableId, recordId, fields)
+}
+
 func (c *Client) GetRecords(ctx context.Context, baseId, tableId, viewId string, limit int) ([]*larkbitable.AppTableRecord, error) {
 	var records []*larkbitable.AppTableRecord
 	var pageToken string
@@ -71,6 +75,10 @@ func (c *Client) GetRecords(ctx context.Context, baseId, tableId, viewId string,
 	return records, nil
 }
 
+func GetRecords(ctx context.Context, baseId, tableId, viewId string, limit int) ([]*larkbitable.AppTableRecord, error) {
+	return GlobalClient.GetRecords(ctx, baseId, tableId, viewId, limit)
+}
+
 func (c *Client) GetRecord(ctx context.Context, baseId, tableId, recordId string) (*larkbitable.AppTableRecord, error) {
 	req := larkbitable.NewGetAppTableRecordReqBuilder().
 		AppToken(baseId).TableId(tableId).RecordId(recordId).Build()
@@ -87,6 +95,10 @@ func (c *Client) GetRecord(ctx context.Context, baseId, tableId, recordId string
 	return resp.Data.Record, nil
 }
 
+func GetRecord(ctx context.Context, baseId, tableId, recordId string) (*larkbitable.AppTableRecord, error) {
+	return GlobalClient.GetRecord(ctx, baseId, tableId, recordId)
+}
+
 func (c *Client) GetDocMedia(ctx context.Context, fileToken string) (io.Reader, string, error) {
 	resp, err := c.Drive.Media.Download(ctx, larkdrive.NewDownloadMediaReqBuilder().FileToken(fileToken).Build())
 	if err != nil {
@@ -98,6 +110,10 @@ func (c *Client) GetDocMedia(ctx context.Context, fileToken string) (io.Reader, 
 	}
 
 	return resp.File, resp.FileName, nil
+}
+
+func GetDocMedia(ctx context.Context, fileToken string) (io.Reader, string, error) {
+	return GlobalClient.GetDocMedia(ctx, fileToken)
 }
 
 func (c *Client) GetDocFile(ctx context.Context, fileToken string) (io.Reader, string, error) {
@@ -113,6 +129,10 @@ func (c *Client) GetDocFile(ctx context.Context, fileToken string) (io.Reader, s
 	return resp.File, resp.FileName, nil
 }
 
+func GetDocFile(ctx context.Context, fileToken string) (io.Reader, string, error) {
+	return GlobalClient.GetDocFile(ctx, fileToken)
+}
+
 func (c *Client) ListBaseTables(ctx context.Context, baseId string) ([]*larkbitable.AppTable, error) {
 	resp, err := c.Bitable.AppTable.List(ctx, larkbitable.NewListAppTableReqBuilder().AppToken(baseId).Build())
 	if err != nil {
@@ -124,6 +144,10 @@ func (c *Client) ListBaseTables(ctx context.Context, baseId string) ([]*larkbita
 	}
 
 	return resp.Data.Items, nil
+}
+
+func ListBaseTables(ctx context.Context, baseId string) ([]*larkbitable.AppTable, error) {
+	return GlobalClient.ListBaseTables(ctx, baseId)
 }
 
 func (c *Client) UploadDocMedia(ctx context.Context, fileName, parentType, parentNode, extras string, size int, reader io.Reader) (string, error) {
@@ -146,6 +170,10 @@ func (c *Client) UploadDocMedia(ctx context.Context, fileName, parentType, paren
 	return *resp.Data.FileToken, nil
 }
 
+func UploadDocMedia(ctx context.Context, fileName, parentType, parentNode, extras string, size int, reader io.Reader) (string, error) {
+	return GlobalClient.UploadDocMedia(ctx, fileName, parentType, parentNode, extras, size, reader)
+}
+
 func (c *Client) UploadDocFile(ctx context.Context, name, parentType, parentNode string, size int, reader io.Reader) (string, error) {
 	resp, err := c.Drive.File.UploadAll(ctx, larkdrive.NewUploadAllFileReqBuilder().Body(
 		larkdrive.NewUploadAllFileReqBodyBuilder().
@@ -163,6 +191,10 @@ func (c *Client) UploadDocFile(ctx context.Context, name, parentType, parentNode
 	}
 
 	return *resp.Data.FileToken, nil
+}
+
+func UploadDocFile(ctx context.Context, name, parentType, parentNode string, size int, reader io.Reader) (string, error) {
+	return GlobalClient.UploadDocFile(ctx, name, parentType, parentNode, size, reader)
 }
 
 func (c *Client) ImportDoc(ctx context.Context, fileExt, fileToken, targetType, fileName string, mountType int, mountKey string) (string, error) {
@@ -186,6 +218,10 @@ func (c *Client) ImportDoc(ctx context.Context, fileExt, fileToken, targetType, 
 	return *resp.Data.Ticket, nil
 }
 
+func ImportDoc(ctx context.Context, fileExt, fileToken, targetType, fileName string, mountType int, mountKey string) (string, error) {
+	return GlobalClient.ImportDoc(ctx, fileExt, fileToken, targetType, fileName, mountType, mountKey)
+}
+
 func (c *Client) GetImportDocStatus(ctx context.Context, ticket string) (*larkdrive.ImportTask, error) {
 	resp, err := c.Drive.ImportTask.Get(ctx, larkdrive.NewGetImportTaskReqBuilder().Ticket(ticket).Build())
 	if err != nil {
@@ -197,6 +233,10 @@ func (c *Client) GetImportDocStatus(ctx context.Context, ticket string) (*larkdr
 	}
 
 	return resp.Data.Result, nil
+}
+
+func GetImportDocStatus(ctx context.Context, ticket string) (*larkdrive.ImportTask, error) {
+	return GlobalClient.GetImportDocStatus(ctx, ticket)
 }
 
 func (c *Client) MoveDocToWiki(ctx context.Context, spaceId, objType, objToken, parentWikiToken string) (*larkwiki.MoveDocsToWikiSpaceNodeRespData, error) {
@@ -216,6 +256,10 @@ func (c *Client) MoveDocToWiki(ctx context.Context, spaceId, objType, objToken, 
 	return resp.Data, nil
 }
 
+func MoveDocToWiki(ctx context.Context, spaceId, objType, objToken, parentWikiToken string) (*larkwiki.MoveDocsToWikiSpaceNodeRespData, error) {
+	return GlobalClient.MoveDocToWiki(ctx, spaceId, objType, objToken, parentWikiToken)
+}
+
 func (c *Client) GetMoveDocToWikiStatus(ctx context.Context, taskId string) ([]*larkwiki.MoveResult, error) {
 	resp, err := c.Wiki.Task.Get(ctx, larkwiki.NewGetTaskReqBuilder().
 		TaskId(taskId).
@@ -230,6 +274,10 @@ func (c *Client) GetMoveDocToWikiStatus(ctx context.Context, taskId string) ([]*
 	}
 
 	return resp.Data.Task.MoveResult, nil
+}
+
+func GetMoveDocToWikiStatus(ctx context.Context, taskId string) ([]*larkwiki.MoveResult, error) {
+	return GlobalClient.GetMoveDocToWikiStatus(ctx, taskId)
 }
 
 // UploadToWiki 上传文件到知识库
@@ -293,4 +341,11 @@ func (c *Client) UploadToWiki(ctx context.Context,
 	}
 
 	return moveStatus, nil
+}
+
+func UploadToWiki(ctx context.Context,
+	name, ext, docType, spaceId, parentNode string,
+	size int, reader io.Reader,
+) ([]*larkwiki.MoveResult, error) {
+	return GlobalClient.UploadToWiki(ctx, name, ext, docType, spaceId, parentNode, size, reader)
 }
