@@ -118,3 +118,37 @@ type Operator struct {
 	OperatorName string        `json:"operator_name"`
 	OperatorId   larkim.UserId `json:"operator_id"`
 }
+
+type JsApiTicketResponse struct {
+	Code    int         `json:"code"`
+	Message string      `json:"msg"`
+	Data    JsApiTicket `json:"data"`
+}
+
+type JsApiTicket struct {
+	Ticket   string `json:"ticket"`
+	ExpireIn int    `json:"expire_in"`
+}
+
+type JsApiAuthResponse struct {
+	Appid     interface{} `json:"appid"`
+	Signature interface{} `json:"signature"`
+	Noncestr  interface{} `json:"noncestr"`
+	Timestamp interface{} `json:"timestamp"`
+}
+
+type MiniProgramTokenResponse struct {
+	Code    int              `json:"code"`
+	Message string           `json:"msg"`
+	Data    MiniProgramToken `json:"data"`
+}
+
+type MiniProgramToken struct {
+	OpenId       string `json:"open_id"`
+	EmployeeId   string `json:"employee_id"`
+	SessionKey   string `json:"session_key"`
+	TenantKey    string `json:"tenant_key"`
+	AccessToken  string `json:"access_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+}

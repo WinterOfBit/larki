@@ -1,6 +1,8 @@
 package larki
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -103,4 +105,10 @@ func buildPost(title string, content []string) (string, error) {
 	}
 
 	return p, nil
+}
+
+func CestSign(origin []byte) string {
+	encrypt := sha1.New()
+	encrypt.Write(origin)
+	return hex.EncodeToString(encrypt.Sum(nil))
 }

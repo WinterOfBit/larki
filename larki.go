@@ -5,6 +5,8 @@ import (
 	"os"
 	"sync"
 
+	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
+
 	larkevent "github.com/larksuite/oapi-sdk-go/v3/event"
 	larkapplication "github.com/larksuite/oapi-sdk-go/v3/service/application/v6"
 
@@ -110,5 +112,11 @@ func WithCustomizedEventSubscribe(eventType string, evtChan chan *larkevent.Even
 			evtChan <- event
 			return nil
 		})
+	}
+}
+
+func WithTokenCache(cache larkcore.Cache) ClientOption {
+	return func(client *Client) {
+		client.Client = lark.NewClient(client.AppID, client.AppSecret, lark.WithTokenCache(cache))
 	}
 }
