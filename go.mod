@@ -3,8 +3,8 @@ module github.com/wintbiit/larki
 go 1.18
 
 require (
-	github.com/bytedance/sonic v1.10.2
-	github.com/larksuite/oapi-sdk-go/v3 v3.0.34
+	github.com/bytedance/sonic v1.11.0
+	github.com/larksuite/oapi-sdk-go/v3 v3.2.0
 )
 
 require (
