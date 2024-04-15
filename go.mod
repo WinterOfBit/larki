@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/bytedance/sonic v1.11.0
-	github.com/larksuite/oapi-sdk-go/v3 v3.2.0
+	github.com/larksuite/oapi-sdk-go/v3 v3.2.2
 )
 
 require (

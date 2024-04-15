@@ -322,6 +322,10 @@ func (c *Client) UploadToWiki(ctx context.Context,
 
 	var moveStatus []*larkwiki.MoveResult
 	for {
+		if resp.TaskId == nil {
+			break
+		}
+
 		moveStatus, err = c.GetMoveDocToWikiStatus(ctx, *resp.TaskId)
 		if err != nil {
 			return nil, err
