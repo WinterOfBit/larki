@@ -174,29 +174,6 @@ func UploadDocMedia(ctx context.Context, fileName, parentType, parentNode, extra
 	return GlobalClient.UploadDocMedia(ctx, fileName, parentType, parentNode, extras, size, reader)
 }
 
-func (c *Client) UploadDocFile(ctx context.Context, name, parentType, parentNode string, size int, reader io.Reader) (string, error) {
-	resp, err := c.Drive.File.UploadAll(ctx, larkdrive.NewUploadAllFileReqBuilder().Body(
-		larkdrive.NewUploadAllFileReqBodyBuilder().
-			FileName(name).
-			ParentType(parentType).
-			ParentNode(parentNode).
-			File(reader).
-			Size(size).Build()).Build())
-	if err != nil {
-		return "", err
-	}
-
-	if !resp.Success() {
-		return "", newLarkError(resp.Code, resp.Msg, "UploadFile")
-	}
-
-	return *resp.Data.FileToken, nil
-}
-
-func UploadDocFile(ctx context.Context, name, parentType, parentNode string, size int, reader io.Reader) (string, error) {
-	return GlobalClient.UploadDocFile(ctx, name, parentType, parentNode, size, reader)
-}
-
 func (c *Client) ImportDoc(ctx context.Context, fileExt, fileToken, targetType, fileName string, mountType int, mountKey string) (string, error) {
 	resp, err := c.Drive.ImportTask.Create(ctx, larkdrive.NewCreateImportTaskReqBuilder().
 		ImportTask(larkdrive.NewImportTaskBuilder().
