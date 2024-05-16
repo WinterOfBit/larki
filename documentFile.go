@@ -3,10 +3,11 @@ package larki
 import (
 	"context"
 	"errors"
-	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
-	"go.uber.org/ratelimit"
 	"io"
 	"sync"
+
+	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
+	"go.uber.org/ratelimit"
 )
 
 func (c *Client) UploadDocFile(ctx context.Context, name, parentType, parentNode string, size int, reader io.Reader) (string, error) {
@@ -153,7 +154,6 @@ func (c *Client) ListDriveFolder(ctx context.Context, folderToken string) ([]*la
 	for {
 		limiter.Take()
 		resp, err := c.Drive.File.List(ctx, larkdrive.NewListFileReqBuilder().PageToken(pageToken).FolderToken(folderToken).Build())
-
 		if err != nil {
 			return nil, err
 		}
@@ -184,7 +184,6 @@ func (c *Client) CreateDriveFolder(ctx context.Context, name, folderToken string
 
 	// 发起请求
 	resp, err := c.Drive.File.CreateFolder(ctx, req)
-
 	if err != nil {
 		return "", err
 	}
