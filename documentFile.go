@@ -58,7 +58,6 @@ func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode st
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	limit := ratelimit.New(5)
 	wg.Add(blockNum)
 
 	errs := make([]error, 0)
@@ -80,7 +79,7 @@ func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode st
 
 			reader := io.NewSectionReader(reader, start, end-start)
 
-			err := c.uploadDocFilePart(ctx, uploadId, i, blockSize, reader, limit)
+			err := c.uploadDocFilePart(ctx, uploadId, i, blockSize, reader)
 			if err != nil {
 				mu.Lock()
 				errs = append(errs, err)
@@ -116,8 +115,10 @@ func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode st
 	return *closeResp.Data.FileToken, nil
 }
 
-func (c *Client) uploadDocFilePart(ctx context.Context, uploadId string, i, blockSize int, reader io.Reader, limiter ratelimit.Limiter) error {
-	limiter.Take()
+var uploadDocFilePartLimiter = ratelimit.New(5)
+
+func (c *Client) uploadDocFilePart(ctx context.Context, uploadId string, i, blockSize int, reader io.Reader) error {
+	uploadDocFilePartLimiter.Take()
 
 	req := larkdrive.NewUploadPartFileReqBuilder().
 		Body(larkdrive.NewUploadPartFileReqBodyBuilder().
@@ -174,6 +175,10 @@ func (c *Client) ListDriveFolder(ctx context.Context, folderToken string) ([]*la
 	return files, nil
 }
 
+func ListDriveFolder(ctx context.Context, folderToken string) ([]*larkdrive.File, error) {
+	return GlobalClient.ListDriveFolder(ctx, folderToken)
+}
+
 func (c *Client) CreateDriveFolder(ctx context.Context, name, folderToken string) (string, error) {
 	req := larkdrive.NewCreateFolderFileReqBuilder().
 		Body(larkdrive.NewCreateFolderFileReqBodyBuilder().
@@ -193,4 +198,8 @@ func (c *Client) CreateDriveFolder(ctx context.Context, name, folderToken string
 	}
 
 	return *resp.Data.Token, nil
+}
+
+func CreateDriveFolder(ctx context.Context, name, folderToken string) (string, error) {
+	return GlobalClient.CreateDriveFolder(ctx, name, folderToken)
 }
