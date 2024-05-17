@@ -26,12 +26,13 @@ func GetMessage(ctx context.Context, messageId string) (*larkim.Message, error) 
 }
 
 // ReplyMessage 回复消息
-func (c *Client) ReplyMessage(ctx context.Context, message, messageId, messageType string) error {
+func (c *Client) ReplyMessage(ctx context.Context, message, messageId, messageType string, inThread bool) error {
 	resp, err := c.Im.Message.Reply(ctx,
 		larkim.NewReplyMessageReqBuilder().Body(
 			larkim.NewReplyMessageReqBodyBuilder().
 				MsgType(messageType).
 				Content(message).
+				ReplyInThread(inThread).
 				Build()).
 			MessageId(messageId).Build())
 	if err != nil {
@@ -46,58 +47,58 @@ func (c *Client) ReplyMessage(ctx context.Context, message, messageId, messageTy
 }
 
 // ReplyMessage 回复消息
-func ReplyMessage(ctx context.Context, message, messageId, messageType string) error {
-	return GlobalClient.ReplyMessage(ctx, message, messageId, messageType)
+func ReplyMessage(ctx context.Context, message, messageId, messageType string, inThread bool) error {
+	return GlobalClient.ReplyMessage(ctx, message, messageId, messageType, inThread)
 }
 
 // ReplyText 使用文本回复消息
-func (c *Client) ReplyText(ctx context.Context, messageId, title string, text ...string) error {
+func (c *Client) ReplyText(ctx context.Context, inThread bool, messageId, title string, text ...string) error {
 	content, err := buildPost(title, text)
 	if err != nil {
 		return err
 	}
 
-	return c.ReplyMessage(ctx, content, messageId, larkim.MsgTypePost)
+	return c.ReplyMessage(ctx, content, messageId, larkim.MsgTypePost, inThread)
 }
 
 // ReplyText 使用文本回复消息
-func ReplyText(ctx context.Context, messageId, title string, text ...string) error {
-	return GlobalClient.ReplyText(ctx, messageId, title, text...)
+func ReplyText(ctx context.Context, inThread bool, messageId, title string, text ...string) error {
+	return GlobalClient.ReplyText(ctx, inThread, messageId, title, text...)
 }
 
 // ReplyImage 使用图片回复消息
-func (c *Client) ReplyImage(ctx context.Context, messageId, imageKey string) error {
-	return c.ReplyMessage(ctx, NewImageContent(imageKey), messageId, larkim.MsgTypeImage)
+func (c *Client) ReplyImage(ctx context.Context, inThread bool, messageId, imageKey string) error {
+	return c.ReplyMessage(ctx, NewImageContent(imageKey), messageId, larkim.MsgTypeImage, inThread)
 }
 
 // ReplyImage 使用图片回复消息
-func ReplyImage(ctx context.Context, messageId, imageKey string) error {
-	return GlobalClient.ReplyImage(ctx, messageId, imageKey)
+func ReplyImage(ctx context.Context, inThread bool, messageId, imageKey string) error {
+	return GlobalClient.ReplyImage(ctx, inThread, messageId, imageKey)
 }
 
 // ReplyCard 使用卡片回复消息
-func (c *Client) ReplyCard(ctx context.Context, messageId, card string) error {
-	return c.ReplyMessage(ctx, card, messageId, larkim.MsgTypeInteractive)
+func (c *Client) ReplyCard(ctx context.Context, inThread bool, messageId, card string) error {
+	return c.ReplyMessage(ctx, card, messageId, larkim.MsgTypeInteractive, inThread)
 }
 
 // ReplyCard 使用卡片回复消息
-func ReplyCard(ctx context.Context, messageId, card string) error {
-	return GlobalClient.ReplyCard(ctx, messageId, card)
+func ReplyCard(ctx context.Context, inThread bool, messageId, card string) error {
+	return GlobalClient.ReplyCard(ctx, inThread, messageId, card)
 }
 
 // ReplyCardTemplate 使用模板卡片回复消息
-func (c *Client) ReplyCardTemplate(ctx context.Context, messageId, templateId string, vars map[string]interface{}) error {
+func (c *Client) ReplyCardTemplate(ctx context.Context, inThread bool, messageId, templateId string, vars map[string]interface{}) error {
 	str, err := buildTemplateCard(templateId, vars)
 	if err != nil {
 		return err
 	}
 
-	return c.ReplyCard(ctx, messageId, str)
+	return c.ReplyCard(ctx, inThread, messageId, str)
 }
 
 // ReplyCardTemplate 使用模板卡片回复消息
-func ReplyCardTemplate(ctx context.Context, messageId, templateId string, vars map[string]interface{}) error {
-	return GlobalClient.ReplyCardTemplate(ctx, messageId, templateId, vars)
+func ReplyCardTemplate(ctx context.Context, inThread bool, messageId, templateId string, vars map[string]interface{}) error {
+	return GlobalClient.ReplyCardTemplate(ctx, inThread, messageId, templateId, vars)
 }
 
 func (c *Client) SendMessage(ctx context.Context, receiverIdType, message, receiveId, messageType string) (string, error) {
