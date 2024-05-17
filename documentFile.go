@@ -33,7 +33,11 @@ func UploadDocFile(ctx context.Context, name, parentType, parentNode string, siz
 	return GlobalClient.UploadDocFile(ctx, name, parentType, parentNode, size, reader)
 }
 
+var uploadDocFilePrepareLimit = ratelimit.New(5)
+var uploadDocFileCloseLimit = ratelimit.New(5)
+
 func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode string, size int, reader io.ReaderAt) (string, error) {
+	uploadDocFilePrepareLimit.Take()
 	req := larkdrive.NewUploadPrepareFileReqBuilder().
 		FileUploadInfo(larkdrive.NewFileUploadInfoBuilder().
 			FileName(name).
@@ -103,6 +107,7 @@ func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode st
 		Build()
 
 	// 发起请求
+	uploadDocFileCloseLimit.Take()
 	closeResp, err := c.Drive.File.UploadFinish(ctx, closeReq)
 	if err != nil {
 		return "", err
