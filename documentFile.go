@@ -33,8 +33,10 @@ func UploadDocFile(ctx context.Context, name, parentType, parentNode string, siz
 	return GlobalClient.UploadDocFile(ctx, name, parentType, parentNode, size, reader)
 }
 
-var uploadDocFilePrepareLimit = ratelimit.New(5)
-var uploadDocFileCloseLimit = ratelimit.New(5)
+var (
+	uploadDocFilePrepareLimit = ratelimit.New(5)
+	uploadDocFileCloseLimit   = ratelimit.New(5)
+)
 
 func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode string, size int, reader io.ReaderAt) (string, error) {
 	uploadDocFilePrepareLimit.Take()
@@ -207,4 +209,124 @@ func (c *Client) CreateDriveFolder(ctx context.Context, name, folderToken string
 
 func CreateDriveFolder(ctx context.Context, name, folderToken string) (string, error) {
 	return GlobalClient.CreateDriveFolder(ctx, name, folderToken)
+}
+
+var (
+	uploadDocMediaMultiPartLimiter        = ratelimit.New(5)
+	uploadDocMediaMultiPartPrepareLimiter = ratelimit.New(5)
+)
+
+func (c *Client) UploadDocMediaMultiPart(ctx context.Context, name, parentType, parentNode, extra string, size int, reader io.ReaderAt) (string, error) {
+	uploadDocMediaMultiPartPrepareLimiter.Take()
+
+	req := larkdrive.NewUploadPrepareMediaReqBuilder().
+		MediaUploadInfo(larkdrive.NewMediaUploadInfoBuilder().
+			FileName(name).
+			ParentType(parentType).
+			Size(size).
+			ParentNode(parentNode).
+			Extra(extra).
+			Build()).
+		Build()
+
+	resp, err := c.Drive.Media.UploadPrepare(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	if !resp.Success() {
+		return "", newLarkError(resp.Code, resp.Msg, "UploadMediaPrepare")
+	}
+
+	uploadId := *resp.Data.UploadId
+	blockSize := *resp.Data.BlockSize
+	blockNum := *resp.Data.BlockNum
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	wg.Add(blockNum)
+
+	errs := make([]error, 0)
+
+	// Upload blocks
+	for i := 0; i < blockNum; i++ {
+		i := i
+		go func(blockSize int) {
+			defer wg.Done()
+
+			// reader range: [i*blockSize, (i+1)*blockSize)
+			start := int64(i * blockSize)
+
+			if i == blockNum-1 {
+				blockSize = size - i*blockSize
+			}
+
+			end := start + int64(blockSize)
+
+			reader := io.NewSectionReader(reader, start, end-start)
+
+			err := c.uploadDocMediaPart(ctx, uploadId, i, blockSize, reader)
+			if err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+				return
+			}
+		}(blockSize)
+	}
+
+	wg.Wait()
+
+	if len(errs) > 0 {
+		return "", errors.Join(errs...)
+	}
+
+	closeReq := larkdrive.NewUploadFinishMediaReqBuilder().
+		Body(larkdrive.NewUploadFinishMediaReqBodyBuilder().
+			UploadId(uploadId).
+			BlockNum(blockNum).
+			Build()).
+		Build()
+
+	// 发起请求
+	uploadDocMediaMultiPartLimiter.Take()
+	closeResp, err := c.Drive.Media.UploadFinish(ctx, closeReq)
+	if err != nil {
+		return "", err
+	}
+
+	if !closeResp.Success() {
+		return "", newLarkError(closeResp.Code, closeResp.Msg, "UploadMediaFinish")
+	}
+
+	return *closeResp.Data.FileToken, nil
+}
+
+func (c *Client) uploadDocMediaPart(ctx context.Context, uploadId string, i, blockSize int, reader io.Reader) error {
+	uploadDocMediaMultiPartLimiter.Take()
+
+	req := larkdrive.NewUploadPartMediaReqBuilder().
+		Body(larkdrive.NewUploadPartMediaReqBodyBuilder().
+			UploadId(uploadId).
+			Seq(i).
+			Size(blockSize).
+			File(reader).
+			Build()).
+		Build()
+
+	// 发起请求
+	resp, err := c.Drive.Media.UploadPart(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	if !resp.Success() {
+		return newLarkError(resp.Code, resp.Msg, "UploadMediaPart")
+	}
+
+	return nil
+}
+
+func UploadDocMediaMultiPart(ctx context.Context, name, parentType, parentNode, extra string, size int, reader io.ReaderAt) (string, error) {
+	return GlobalClient.UploadDocMediaMultiPart(ctx, name, parentType, parentNode, extra, size, reader)
 }
