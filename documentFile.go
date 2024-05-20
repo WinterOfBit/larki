@@ -2,9 +2,10 @@ package larki
 
 import (
 	"context"
+	"io"
+
 	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
 	"go.uber.org/ratelimit"
-	"io"
 )
 
 func (c *Client) UploadDocFile(ctx context.Context, name, parentType, parentNode string, size int, reader io.Reader) (string, error) {
