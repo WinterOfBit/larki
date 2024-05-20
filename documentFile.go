@@ -3,6 +3,8 @@ package larki
 import (
 	"context"
 	"io"
+	"strconv"
+	"time"
 
 	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
 	"go.uber.org/ratelimit"
@@ -116,6 +118,21 @@ func (c *Client) uploadDocFilePart(ctx context.Context, uploadId string, i, bloc
 	}
 
 	if !resp.Success() {
+		if resp.Code == 99991400 {
+			// frequency limit
+			ratelimitResetStr := resp.Header.Get("x-ogw-ratelimit-reset")
+			ratelimitReset, err := strconv.ParseInt(ratelimitResetStr, 10, 64)
+			if err != nil {
+				return err
+			}
+
+			// wait for ratelimit reset
+			time.Sleep(time.Duration(ratelimitReset) * time.Second)
+
+			// retry
+			return c.uploadDocFilePart(ctx, uploadId, i, blockSize, reader)
+		}
+
 		return newLarkError(resp.Code, resp.Msg, "UploadFilePart")
 	}
 
@@ -269,6 +286,21 @@ func (c *Client) uploadDocMediaPart(ctx context.Context, uploadId string, i, blo
 	}
 
 	if !resp.Success() {
+		if resp.Code == 99991400 {
+			// frequency limit
+			ratelimitResetStr := resp.Header.Get("x-ogw-ratelimit-reset")
+			ratelimitReset, err := strconv.ParseInt(ratelimitResetStr, 10, 64)
+			if err != nil {
+				return err
+			}
+
+			// wait for ratelimit reset
+			time.Sleep(time.Duration(ratelimitReset) * time.Second)
+
+			// retry
+			return c.uploadDocMediaPart(ctx, uploadId, i, blockSize, reader)
+		}
+
 		return newLarkError(resp.Code, resp.Msg, "UploadMediaPart")
 	}
 
