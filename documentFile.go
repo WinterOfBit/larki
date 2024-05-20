@@ -2,12 +2,9 @@ package larki
 
 import (
 	"context"
-	"errors"
-	"io"
-	"sync"
-
 	larkdrive "github.com/larksuite/oapi-sdk-go/v3/service/drive/v1"
 	"go.uber.org/ratelimit"
+	"io"
 )
 
 func (c *Client) UploadDocFile(ctx context.Context, name, parentType, parentNode string, size int, reader io.Reader) (string, error) {
@@ -34,11 +31,11 @@ func UploadDocFile(ctx context.Context, name, parentType, parentNode string, siz
 }
 
 var (
-	uploadDocFilePrepareLimit = ratelimit.New(5)
-	uploadDocFileCloseLimit   = ratelimit.New(5)
+	uploadDocFilePrepareLimit = ratelimit.New(2)
+	uploadDocFileCloseLimit   = ratelimit.New(2)
 )
 
-func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode string, size int, reader io.ReaderAt) (string, error) {
+func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode string, size int, reader io.Reader) (string, error) {
 	uploadDocFilePrepareLimit.Take()
 	req := larkdrive.NewUploadPrepareFileReqBuilder().
 		FileUploadInfo(larkdrive.NewFileUploadInfoBuilder().
@@ -62,43 +59,18 @@ func (c *Client) UploadDocFileMultiPart(ctx context.Context, name, parentNode st
 	blockSize := *resp.Data.BlockSize
 	blockNum := *resp.Data.BlockNum
 
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	wg.Add(blockNum)
-
-	errs := make([]error, 0)
-
 	// Upload blocks
 	for i := 0; i < blockNum; i++ {
-		i := i
-		go func(blockSize int) {
-			defer wg.Done()
+		if i == blockNum-1 {
+			blockSize = size - i*blockSize
+		}
 
-			// reader range: [i*blockSize, (i+1)*blockSize)
-			start := int64(i * blockSize)
+		reader := io.LimitReader(reader, int64(blockSize))
 
-			if i == blockNum-1 {
-				blockSize = size - i*blockSize
-			}
-
-			end := start + int64(blockSize)
-
-			reader := io.NewSectionReader(reader, start, end-start)
-
-			err := c.uploadDocFilePart(ctx, uploadId, i, blockSize, reader)
-			if err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
-				return
-			}
-		}(blockSize)
-	}
-
-	wg.Wait()
-
-	if len(errs) > 0 {
-		return "", errors.Join(errs...)
+		err := c.uploadDocFilePart(ctx, uploadId, i, blockSize, reader)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	closeReq := larkdrive.NewUploadFinishFileReqBuilder().
@@ -149,7 +121,7 @@ func (c *Client) uploadDocFilePart(ctx context.Context, uploadId string, i, bloc
 	return nil
 }
 
-func UploadDocFileMultiPart(ctx context.Context, name, parentNode string, size int, reader io.ReaderAt) (string, error) {
+func UploadDocFileMultiPart(ctx context.Context, name, parentNode string, size int, reader io.Reader) (string, error) {
 	return GlobalClient.UploadDocFileMultiPart(ctx, name, parentNode, size, reader)
 }
 
@@ -212,11 +184,11 @@ func CreateDriveFolder(ctx context.Context, name, folderToken string) (string, e
 }
 
 var (
-	uploadDocMediaMultiPartLimiter        = ratelimit.New(5)
-	uploadDocMediaMultiPartPrepareLimiter = ratelimit.New(5)
+	uploadDocMediaMultiPartLimiter        = ratelimit.New(2)
+	uploadDocMediaMultiPartPrepareLimiter = ratelimit.New(2)
 )
 
-func (c *Client) UploadDocMediaMultiPart(ctx context.Context, name, parentType, parentNode, extra string, size int, reader io.ReaderAt) (string, error) {
+func (c *Client) UploadDocMediaMultiPart(ctx context.Context, name, parentType, parentNode, extra string, size int, reader io.Reader) (string, error) {
 	uploadDocMediaMultiPartPrepareLimiter.Take()
 
 	req := larkdrive.NewUploadPrepareMediaReqBuilder().
@@ -242,43 +214,18 @@ func (c *Client) UploadDocMediaMultiPart(ctx context.Context, name, parentType, 
 	blockSize := *resp.Data.BlockSize
 	blockNum := *resp.Data.BlockNum
 
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	wg.Add(blockNum)
-
-	errs := make([]error, 0)
-
 	// Upload blocks
 	for i := 0; i < blockNum; i++ {
-		i := i
-		go func(blockSize int) {
-			defer wg.Done()
+		if i == blockNum-1 {
+			blockSize = size - i*blockSize
+		}
 
-			// reader range: [i*blockSize, (i+1)*blockSize)
-			start := int64(i * blockSize)
+		reader := io.LimitReader(reader, int64(blockSize))
 
-			if i == blockNum-1 {
-				blockSize = size - i*blockSize
-			}
-
-			end := start + int64(blockSize)
-
-			reader := io.NewSectionReader(reader, start, end-start)
-
-			err := c.uploadDocMediaPart(ctx, uploadId, i, blockSize, reader)
-			if err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
-				return
-			}
-		}(blockSize)
-	}
-
-	wg.Wait()
-
-	if len(errs) > 0 {
-		return "", errors.Join(errs...)
+		err := c.uploadDocMediaPart(ctx, uploadId, i, blockSize, reader)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	closeReq := larkdrive.NewUploadFinishMediaReqBuilder().
@@ -327,6 +274,6 @@ func (c *Client) uploadDocMediaPart(ctx context.Context, uploadId string, i, blo
 	return nil
 }
 
-func UploadDocMediaMultiPart(ctx context.Context, name, parentType, parentNode, extra string, size int, reader io.ReaderAt) (string, error) {
+func UploadDocMediaMultiPart(ctx context.Context, name, parentType, parentNode, extra string, size int, reader io.Reader) (string, error) {
 	return GlobalClient.UploadDocMediaMultiPart(ctx, name, parentType, parentNode, extra, size, reader)
 }
