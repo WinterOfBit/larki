@@ -305,3 +305,29 @@ func (c *Client) UpdateCardTemplate(ctx context.Context, messageId, templateId s
 func UpdateCardTemplate(ctx context.Context, messageId, templateId string, vars map[string]interface{}) error {
 	return GlobalClient.UpdateCardTemplate(ctx, messageId, templateId, vars)
 }
+
+func (c *Client) GetJoinedGroups(ctx context.Context) ([]*larkim.ListChat, error) {
+	iter, err := c.Im.Chat.ListByIterator(ctx, larkim.NewListChatReqBuilder().Build())
+	if err != nil {
+		return nil, err
+	}
+
+	var groups []*larkim.ListChat
+	ok := true
+
+	for ok {
+		var resp *larkim.ListChat
+		ok, resp, err = iter.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		groups = append(groups, resp)
+	}
+
+	return groups, nil
+}
+
+func GetJoinedGroups(ctx context.Context) ([]*larkim.ListChat, error) {
+	return GlobalClient.GetJoinedGroups(ctx)
+}
