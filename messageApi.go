@@ -307,22 +307,26 @@ func UpdateCardTemplate(ctx context.Context, messageId, templateId string, vars 
 }
 
 func (c *Client) GetJoinedGroups(ctx context.Context) ([]*larkim.ListChat, error) {
-	iter, err := c.Im.Chat.ListByIterator(ctx, larkim.NewListChatReqBuilder().Build())
-	if err != nil {
-		return nil, err
-	}
+	groups := make([]*larkim.ListChat, 0)
 
-	var groups []*larkim.ListChat
-	ok := true
-
-	for ok {
-		var resp *larkim.ListChat
-		ok, resp, err = iter.Next()
+	pageToken := ""
+	for {
+		req := larkim.NewListChatReqBuilder().PageSize(50).PageToken(pageToken).Build()
+		resp, err := c.Im.Chat.List(ctx, req)
 		if err != nil {
 			return nil, err
 		}
 
-		groups = append(groups, resp)
+		if !resp.Success() {
+			return nil, newLarkError(resp.Code, resp.Msg, "GetJoinedGroups")
+		}
+
+		groups = append(groups, resp.Data.Items...)
+		if !*resp.Data.HasMore || resp.Data.PageToken == nil {
+			break
+		}
+
+		pageToken = *resp.Data.PageToken
 	}
 
 	return groups, nil
